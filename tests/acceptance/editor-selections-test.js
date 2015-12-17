@@ -499,21 +499,3 @@ test('selecting text that includes an empty section and applying markup to it', 
 
   assert.hasElement('#editor p strong:contains(abc)', 'bold is applied to text');
 });
-
-// see https://github.com/bustlelabs/mobiledoc-kit/issues/155
-test('editor#selectSections works when given an empty array', (assert) => {
-  const mobiledoc = Helpers.mobiledoc.build(({post, markupSection, marker}) => {
-    return post([markupSection('p', [marker('abc')])]);
-  });
-  editor = new Editor({mobiledoc});
-  editor.render(editorElement);
-
-  assert.selectedText('', 'precond - no text selected');
-
-  const section = editor.post.sections.head;
-  editor.selectSections([section]);
-
-  assert.selectedText('abc', 'section is selected');
-  editor.selectSections([]);
-  assert.selectedText(null, 'no text selected after selecting no sections');
-});

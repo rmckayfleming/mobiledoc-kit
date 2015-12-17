@@ -38,6 +38,7 @@ import {
 } from '../utils/paste-utils';
 import { DIRECTION } from 'mobiledoc-kit/utils/key';
 import { TAB } from 'mobiledoc-kit/utils/characters';
+import warn from '../utils/warn';
 
 export const EDITOR_ELEMENT_CLASS_NAME = '__mobiledoc-editor';
 
@@ -283,16 +284,8 @@ class Editor {
     this.trigger('update');
   }
 
-  selectSections(sections=[]) {
-    if (sections.length) {
-      let headSection = sections[0],
-          tailSection = sections[sections.length - 1];
-      this.selectRange(new Range(headSection.headPosition(),
-                                 tailSection.tailPosition()));
-    } else {
-      this.cursor.clearSelection();
-    }
-    this._reportSelectionState();
+  selectSections() {
+    warn('`editor.selectSections()` is deprecated and will be removed.');
   }
 
   selectRange(range) {
