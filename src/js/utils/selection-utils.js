@@ -5,6 +5,76 @@ function clearSelection() {
   window.getSelection().removeAllRanges();
 }
 
+function textRects(node) {
+  let range = document.createRange();
+  range.setEnd(node, node.nodeValue.length);
+  range.setStart(node, 0);
+  return range.getClientRects();
+}
+
+function findOffsetInText(node, coords) {
+  let len = node.nodeValue.length;
+  let range = document.createRange();
+  for (let i = 0; i < len; i++) {
+    range.setEnd(node, i + 1);
+    range.setStart(node, i);
+    let rect = range.getBoundingClientRect();
+    if (rect.top === rect.bottom) {
+      continue;
+    }
+    if (rect.left <= coords.left && rect.right >= coords.left &&
+        rect.top <= coords.top && rect.bottom >= coords.top) {
+      return {node, offset: i + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0)};
+    }
+  }
+  return {node, offset: 0};
+}
+
+function findOffsetInNode(node, coords) {
+  let closest, dyClosest = 1e8, coordsClosest, offset = 0;
+  for (let child = node.firstChild; child; child = child.nextSibling) {
+    let rects;
+    if (child.nodeType === 1) {
+      rects = child.getClientRects();
+    } else if (child.nodeType === 3) {
+      rects = textRects(child);
+    } else {
+      continue;
+    }
+
+    for (let i = 0; i < rects.length; i++) {
+      let rect = rects[i];
+      if (rect.left <= coords.left && rect.right >= coords.left) {
+        let dy = rect.top > coords.top ? rect.top - coords.top
+            : rect.bottom < coords.top ? coords.top - rect.bottom : 0;
+        if (dy < dyClosest) {
+          closest = child;
+          dyClosest = dy;
+          coordsClosest = dy ? {left: coords.left, top: rect.top} : coords;
+          if (child.nodeType === 1 && !child.firstChild) {
+            offset = i + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0);
+          }
+          continue;
+        }
+      }
+      if (!closest &&
+          (coords.top >= rect.bottom || coords.top >= rect.top && coords.left >= rect.right)) {
+        offset = i + 1;
+      }
+    }
+  }
+  if (!closest) {
+    return {node, offset};
+  }
+  if (closest.nodeType === 3) {
+    return findOffsetInText(closest, coordsClosest);
+  }
+  if (closest.firstChild) {
+    return findOffsetInNode(closest, coordsClosest);
+  }
+  return {node, offset};
+}
+
 function comparePosition(selection) {
   let { anchorNode, focusNode, anchorOffset, focusOffset } = selection;
   let headNode, tailNode, headOffset, tailOffset, direction;
@@ -69,5 +139,6 @@ function comparePosition(selection) {
 
 export {
   clearSelection,
-  comparePosition
+  comparePosition,
+  findOffsetInNode
 };

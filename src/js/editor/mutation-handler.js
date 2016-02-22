@@ -15,6 +15,7 @@ export default class MutationHandler {
     this._isObserving = false;
 
     this._observer = new MutationObserver((mutations) => {
+      console.log(`observer ${mutations.length} mutations`);
       this._handleMutations(mutations);
     });
   }

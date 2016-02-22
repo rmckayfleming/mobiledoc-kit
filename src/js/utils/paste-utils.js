@@ -104,3 +104,17 @@ export function parsePostFromPaste(pasteEvent, builder, plugins=[]) {
 
   return post;
 }
+
+export function parsePostFromDrop(dropEvent, builder, plugins=[]) {
+  let post;
+
+  let html = dropEvent.dataTransfer.getData('text/html');
+  let text = dropEvent.dataTransfer.getData('text/plain');
+  if (html && html.length > 0) {
+    post = parsePostFromHTML(html, builder, plugins);
+  } else if (text && text.length > 0) {
+    post = parsePostFromText(text, builder, plugins);
+  }
+
+  return post;
+}

@@ -20,6 +20,7 @@ import { setData } from '../utils/element-utils';
 import mixin from '../utils/mixin';
 import EventListenerMixin from '../utils/event-listener';
 import Cursor from '../utils/cursor';
+import Position from '../utils/cursor/position';
 import Range from '../utils/cursor/range';
 import PostNodeBuilder from '../models/post-node-builder';
 import {
@@ -34,6 +35,7 @@ import { CARD_MODES } from '../models/card';
 import { detect } from '../utils/array-utils';
 import {
   parsePostFromPaste,
+  parsePostFromDrop,
   setClipboardCopyData
 } from '../utils/paste-utils';
 import { DIRECTION } from 'mobiledoc-kit/utils/key';
@@ -42,10 +44,11 @@ import assert from '../utils/assert';
 import MutationHandler from 'mobiledoc-kit/editor/mutation-handler';
 import { MOBILEDOC_VERSION } from 'mobiledoc-kit/renderers/mobiledoc';
 import EditHistory from 'mobiledoc-kit/editor/edit-history';
+import { findOffsetInNode } from '../utils/selection-utils';
 
 export const EDITOR_ELEMENT_CLASS_NAME = '__mobiledoc-editor';
 
-const ELEMENT_EVENTS = ['keydown', 'keyup', 'cut', 'copy', 'paste'];
+const ELEMENT_EVENTS = ['keydown', 'keyup', 'cut', 'copy', 'paste', 'dragover', 'drop'];
 const DOCUMENT_EVENTS= ['mouseup'];
 
 const defaults = {
@@ -598,6 +601,32 @@ class Editor {
 
   handleKeyup() {
     this._reportSelectionState();
+  }
+
+  handleDragover(evt) {
+    let { clientX: x, clientY: y } = evt;
+    let _node = document.elementFromPoint(x, y);
+    let {node, offset} = findOffsetInNode(_node, {left: x, top: y});
+    if (offset !== this.lastOffset) {
+//      console.log(node, offset);
+    }
+    this.lastOffset = offset;
+  }
+
+  handleDrop(event) {
+    let { clientX: x, clientY: y } = event;
+    let _node = document.elementFromPoint(x, y);
+    let {node, offset} = findOffsetInNode(_node, {left: x, top: y});
+    let position = Position.fromNode(this._renderTree, node, offset);
+    let range = new Range(position);
+    let pastedPost = parsePostFromDrop(event, this.builder, this._parserPlugins);
+
+    this.run(postEditor => {
+      let nextPosition = postEditor.insertPost(position, pastedPost);
+      postEditor.setRange(new Range(nextPosition));
+    });
+
+    event.preventDefault();
   }
 
   /*
