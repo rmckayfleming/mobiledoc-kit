@@ -1,8 +1,26 @@
 import { DIRECTION } from '../utils/key';
+import { isTextNode } from '../utils/dom-utils';
 
 function clearSelection() {
-  // FIXME-IE ensure this works on IE 9. It works on IE10.
   window.getSelection().removeAllRanges();
+}
+
+// IE will sometimes report that the focusNode is the editor element and
+// the focus offset is editor.childNodes.length (i.e., an offset greater than
+// the max we would expect). In that case this function finds the innermost
+// last node of the childnodes and returns an offset equal to its length.
+// @return {Object} with `node` and `offset` properties
+function endOf(node) {
+  if (node.childNodes.length) {
+    let lastChild = node.lastChild;
+    if (isTextNode(lastChild)) {
+      return { node: lastChild, offset: lastChild.textContent.length };
+    } else {
+      return endOf(lastChild);
+    }
+  } else {
+    return { node, offset: node.textContent.length };
+  }
 }
 
 function comparePosition(selection) {
@@ -23,13 +41,22 @@ function comparePosition(selection) {
   // This code walks down the DOM tree until a good comparison of position can be
   // made.
   //
-  if (position & Node.DOCUMENT_POSITION_CONTAINS) {
+  if (position & Node.DOCUMENT_POSITION_CONTAINS) { // focusNode contains anchorNode
+    let nextFocusNode;
+    if (focusOffset >= focusNode.childNodes.length) {
+      let details = endOf(focusNode);
+      nextFocusNode = details.node;
+      focusOffset   = details.offset;
+    } else {
+      nextFocusNode = focusNode.childNodes[focusOffset];
+      focusOffset = 0;
+    }
     return comparePosition({
-      focusNode: focusNode.childNodes[focusOffset],
-      focusOffset: 0,
+      focusNode: nextFocusNode, //focusNode.childNodes[focusOffset],
+      focusOffset: focusOffset,
       anchorNode, anchorOffset
     });
-  } else if (position & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+  } else if (position & Node.DOCUMENT_POSITION_CONTAINED_BY) { // focusNode contained by anchorNode
     let offset = anchorOffset - 1;
     if (offset < 0) {
       offset = 0;
@@ -40,11 +67,11 @@ function comparePosition(selection) {
       focusNode, focusOffset
     });
   // The meat of translating anchor and focus nodes to head and tail nodes
-  } else if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+  } else if (position & Node.DOCUMENT_POSITION_FOLLOWING) { // focusNode follows anchorNode
     headNode = anchorNode; tailNode = focusNode;
     headOffset = anchorOffset; tailOffset = focusOffset;
     direction = DIRECTION.FORWARD;
-  } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+  } else if (position & Node.DOCUMENT_POSITION_PRECEDING) { // focusNode precedes anchorNode
     headNode = focusNode; tailNode = anchorNode;
     headOffset = focusOffset; tailOffset = anchorOffset;
     direction = DIRECTION.BACKWARD;
