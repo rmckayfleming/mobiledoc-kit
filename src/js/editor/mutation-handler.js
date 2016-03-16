@@ -1,8 +1,7 @@
 import Set from 'mobiledoc-kit/utils/set';
 import { forEach, filter } from 'mobiledoc-kit/utils/array-utils';
 import assert from 'mobiledoc-kit/utils/assert';
-import { containsNode, closest } from 'mobiledoc-kit/utils/dom-utils';
-import { ATOM_CLASS_NAME } from 'mobiledoc-kit/renderers/editor-dom';
+import { containsNode } from 'mobiledoc-kit/utils/dom-utils';
 
 const MUTATION = {
   NODES_CHANGED: 'childList',
@@ -88,10 +87,15 @@ export default class MutationHandler {
 
       for (let j=0; j < nodes.length; j++) {
         let node = nodes[j];
-        let renderNode = this._findSectionRenderNodeFromNode(node);
+        let renderNode = this._findRenderNodeFromNode(node);
         if (renderNode) {
           if (renderNode.reparsesMutationOfChildNode(node)) {
-            sections.add(renderNode.postNode);
+            let section = this._findSectionFromRenderNode(renderNode);
+            if (section) {
+              sections.add(section);
+            } else {
+              reparsePost = true;
+            }
           }
         } else {
           reparsePost = true;
@@ -123,8 +127,8 @@ export default class MutationHandler {
     }
 
     let element = this.editor.element;
-    let atomClass = `.${ATOM_CLASS_NAME}`;
-    let attachedNodes = filter(nodes, node => containsNode(element, node) && !closest(node, atomClass, true));
+    //let atomClass = `.${ATOM_CLASS_NAME}`;
+    let attachedNodes = filter(nodes, node => containsNode(element, node)); // && !closest(node, atomClass, true));
     return attachedNodes;
   }
 
@@ -132,6 +136,15 @@ export default class MutationHandler {
     return this.renderTree.findRenderNodeFromElement(node, (rn) => {
       return rn.postNode.isSection;
     });
+  }
+
+  _findRenderNodeFromNode(node) {
+    return this.renderTree.findRenderNodeFromElement(node);
+  }
+
+  _findSectionFromRenderNode(renderNode) {
+    let sectionRenderNode = this._findSectionRenderNodeFromNode(renderNode.element);
+    return sectionRenderNode && sectionRenderNode.postNode;
   }
 
 }
