@@ -94,7 +94,7 @@ function parseHTML(html) {
 
 function closest(el, selector, contentOnly=false) {
   if (!isElementNode(el)) {
-    el = el.parentElement;
+    el = el.parentNode;
   }
   var matchesSelector = el.matches || el.webkitMatchesSelector || el.mozMatchesSelector || el.msMatchesSelector;
 
