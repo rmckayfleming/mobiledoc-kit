@@ -4,10 +4,22 @@ import {
 } from 'mobiledoc-kit/utils/dom-utils';
 
 function getEventTargetMatchingTag(tagName, target, container) {
+  let className = null;
+  [tagName, className] = tagName.split(".");
   tagName = normalizeTagName(tagName);
+
+  if (typeof className !== 'undefined') {
+    className = normalizeTagName(className);
+  } else {
+    className = "";
+  }
+
   // Traverses up DOM from an event target to find the node matching specifed tag
   while (target && target !== container) {
-    if (normalizeTagName(target.tagName) === tagName) {
+    let _tagName = normalizeTagName(target.tagName);
+    let _className = normalizeTagName(target.className);
+
+    if (_tagName === tagName && _className === className) {
       return target;
     }
     target = target.parentNode;

@@ -54,6 +54,7 @@ const defaults = {
   undoDepth: 5,
   cards: [],
   atoms: [],
+  tooltips: [],
   cardOptions: {},
   unknownCardHandler: ({env}) => {
     throw new Error(`Unknown card encountered: ${env.name}`);
@@ -167,7 +168,13 @@ class Editor {
       this.enableEditing();
     }
 
-    this._addTooltip();
+    this.tooltips.forEach(tooltip => {
+      this.addView(new Tooltip({
+        rootElement: this.element,
+        showForTag: tooltip.selector,
+        messageContent: tooltip.messageContent
+      }));
+    });
 
     // A call to `run` will trigger the didUpdatePostCallbacks hooks with a
     // postEditor.
@@ -184,13 +191,6 @@ class Editor {
     }
     this._mutationHandler.init();
     this._eventManager.init();
-  }
-
-  _addTooltip() {
-    this.addView(new Tooltip({
-      rootElement: this.element,
-      showForTag: 'a'
-    }));
   }
 
   get expansions() {

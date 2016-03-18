@@ -14,11 +14,12 @@ export default class Tooltip extends View {
       let target = getEventTargetMatchingTag(options.showForTag, e.target, rootElement);
       if (target && target.isContentEditable) {
         timeout = setTimeout(() => {
-          this.showLink(target.href, target);
+          let message = options.messageContent(target);
+          this.showMessage(message, target);
         }, DELAY);
       }
     });
-    
+
     this.addEventListener(rootElement, 'mouseout', (e) => {
       clearTimeout(timeout);
       let toElement = e.toElement || e.relatedTarget;
@@ -33,10 +34,5 @@ export default class Tooltip extends View {
     tooltipElement.innerHTML = message;
     this.show();
     positionElementCenteredBelow(tooltipElement, element);
-  }
-
-  showLink(link, element) {
-    let message = `<a href="${link}" target="_blank">${link}</a>`;
-    this.showMessage(message, element);
   }
 }
